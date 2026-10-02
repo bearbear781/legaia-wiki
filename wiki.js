@@ -114,6 +114,7 @@
     urudre1: ['乌鲁迈斯 · 梦境', 'Uru Mais (dream)'], urudre2: ['乌鲁迈斯 · 梦境', 'Uru Mais (dream)'], urudre3: ['乌鲁迈斯 · 梦境', 'Uru Mais (dream)'],
   };
   const WORLD = { map01: 0, map02: 1, map03: 2 };
+  const REGION_FIX = { station: 1 };                 // Octam Station is in Sebucus (its first chapter sets off for Karisto)
   const isCut = (l) => /^(ed|op)/.test(l);
   const PLACE_EN = X.place_en || {};
   const placeNameZh = (label) => {
@@ -164,7 +165,8 @@
         const r = WORLD[P.key];
         P.region = r;
         P.ch = chs.map((c, i) => (c.region === r ? i : -1)).filter((i) => i >= 0);
-      } else if (P.ch.length) P.region = chs[Math.min(...P.ch)].region;
+      } else if (REGION_FIX[P.key] !== undefined) P.region = REGION_FIX[P.key];
+      else if (P.ch.length) P.region = chs[Math.min(...P.ch)].region;
       P.ch.sort((a, b) => a - b);
     }
   })();
@@ -2334,9 +2336,10 @@
   const howOf = (q) => (q.how ? tr(q.how) : q.t === 'box' || q.t === 'box2' ? T`宝箱` : q.t === 'hid' ? T`调查${tr(q.n || '柜子')}` : q.t === 'floor' ? T`地上的发光处` : q.t === 'obj' ? T`捡起${tr(q.n || '')}` : q.t === 'shop' || q.t === 'plat' ? T`${tr(q.n || '商店')}有卖` : q.n ? T`找${tr(q.n)}` : T`剧情事件`);
   function limitedRow(o) {
     const one = o.alts.length === 1;
-    const ways = o.alts.map((g) => { const q = g[0]; return `${q.s ? aPlace(q.s) : esc(tr(q.p || ''))}${colon()}${esc(howOf(q))}${one && o.spots.length > 1 ? ` <span class="faint small">${T`（${o.spots.length} 处）`}</span>` : ''}${q.w && q.s ? ' · ' + (one ? spotLinks(o.spots, T`地图`) : spotLink(q, T`地图`)) : ''}`; });
+    const qty = (q) => (o.alts.length > 1 && q.q > 1 ? ` ×${q.q}` : '');     // ways that differ only in how many they give
+    const ways = o.alts.map((g) => { const q = g[0]; return `${q.s ? aPlace(q.s) : esc(tr(q.p || ''))}${colon()}${esc(howOf(q))}${qty(q)}${one && o.spots.length > 1 ? ` <span class="faint small">${T`（${o.spots.length} 处）`}</span>` : ''}${q.w && q.s ? ' · ' + (one ? spotLinks(o.spots, T`地图`) : spotLink(q, T`地图`)) : ''}`; });
     const dls = uniq(o.alts.map((g) => deadline(g[g.length - 1])));
-    return `<tr><td class="cell-n">${aItem(o.id)}${o.key ? ` <span class="pill acc">${T`重要`}</span>` : ''}</td><td class="small">${ways.length > 1 ? `<span class="faint">${T`只有一件，任选一处：`}</span><br>${ways.join(`<br>${T`或`} `)}` : ways[0]}</td><td class="small warn">${dls.map(esc).join('<br>')}</td><td class="small">${restText(o.rest)}</td></tr>`;
+    return `<tr><td class="cell-n">${aItem(o.id)}${o.key ? ` <span class="pill acc">${T`重要`}</span>` : ''}</td><td class="small">${ways.length > 1 ? `<span class="faint">${uniq(o.alts.map((g) => PL_OF[g[0].s] || g[0].p)).length > 1 ? T`只有一件，任选一处：` : T`只能拿一次，任选一种：`}</span><br>${ways.join(`<br>${T`或`} `)}` : ways[0]}</td><td class="small warn">${dls.map(esc).join('<br>')}</td><td class="small">${restText(o.rest)}</td></tr>`;
   }
   PAGES.walkthrough = () => {
     let h = crumbs([home(), ['', T`剧情攻略`]]) + `<h1>${T`剧情攻略`}</h1><div class="h1sub">${T`全部 ${GUIDE.ch.length} 章流程：每一步去哪里、找谁、做什么，头目和这一章能拿的东西。`}</div>`;
